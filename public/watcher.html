@@ -1,0 +1,185 @@
+<!-- watcher.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalLink Watcher</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Load Socket.IO client from a CDN -->
+    <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="app-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M13 19h-2v-8H5v8H3V5h2v4h6V5h2v14zm8-4h-5v2h5v2H9v-6h7v-2H9V9h12v6z"
+          />
+        </svg>
+        <span>LocalLink</span>
+      </a>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <h1 class="app-title mb-2">Watcher</h1>
+        <p class="mb-4">
+          View a broadcast from another device on your local network.
+        </p>
+
+        <div id="status-container" class="status-indicator connecting mb-4">
+          <span class="dot"></span>
+          <span id="status">Waiting for broadcaster...</span>
+        </div>
+
+        <div class="video-container">
+          <video id="video" controls autoplay playsinline></video>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      console.log("Watcher script starting...");
+
+      // Check if this machine is currently broadcasting.
+      if (localStorage.getItem("isBroadcasting") === "true") {
+        const statusElem =
+          document.getElementById("status");
+        statusElem.textContent =
+          "Error: You cannot view your own broadcast on this device.";
+        // Optionally hide the video element.
+        document.getElementById("video").style.display =
+          "none";
+        throw new Error(
+          "Watching broadcast on the same machine is not allowed."
+        );
+      }
+
+      const statusElem = document.getElementById("status");
+      const statusContainer =
+        document.getElementById("status-container");
+      const videoElement = document.getElementById("video");
+
+      function updateStatus(message, type = "") {
+        statusElem.textContent = message;
+        statusContainer.className = "status-indicator mb-4";
+        if (type) {
+          statusContainer.classList.add(type);
+        }
+      }
+
+      // Connect to the Heroku signaling server.
+      const socket = io(
+        "https://locallink-signaling-0763fb08f9e9.herokuapp.com",
+        { path: "/socket" }
+      );
+      console.log("Socket object:", socket);
+      let pc = null;
+      let broadcastId = null;
+      let remoteStream = new MediaStream();
+      videoElement.srcObject = remoteStream;
+
+      socket.on("connect", () => {
+        console.log("Watcher connected with id:", socket.id);
+        updateStatus("Connected to signaling server.", "connecting");
+        console.log("Emitting watcher event...");
+        socket.emit("watcher");
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Connection error:", error);
+        updateStatus("Connection error: " + error);
+      });
+
+      socket.on("broadcaster", () => {
+        console.log("Received 'broadcaster' event from server.");
+        socket.emit("watcher");
+      });
+
+      socket.on("offer", (broadcasterId, description) => {
+        console.log("Received offer from broadcaster:", broadcasterId);
+        broadcastId = broadcasterId;
+        updateStatus("Connecting to broadcast...", "connecting");
+
+        if (pc) {
+          pc.close();
+          pc = null;
+        }
+        pc = new RTCPeerConnection();
+        console.log("Created new RTCPeerConnection.");
+
+        // Clear previous remote stream tracks.
+        remoteStream.getTracks().forEach((track) => track.stop());
+        remoteStream = new MediaStream();
+        videoElement.srcObject = remoteStream;
+
+        pc.setRemoteDescription(description)
+          .then(() => {
+            console.log("Remote description set, creating answer...");
+            return pc.createAnswer();
+          })
+          .then((answer) => {
+            console.log("Answer created:", answer);
+            return pc.setLocalDescription(answer);
+          })
+          .then(() => {
+            console.log("Local description set, sending answer.");
+            socket.emit("answer", broadcastId, pc.localDescription);
+          })
+          .catch((error) =>
+            console.error("Error during offer handling:", error)
+          );
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            console.log("Sending ICE candidate:", event.candidate);
+            socket.emit("candidate", broadcastId, event.candidate);
+          }
+        };
+
+        pc.ontrack = (event) => {
+          console.log("Received track:", event.track.kind);
+          event.streams[0].getTracks().forEach((track) => {
+            console.log("Adding track:", track.kind);
+            remoteStream.addTrack(track);
+          });
+          updateStatus("Connected to broadcast!", "success");
+        };
+      });
+
+      socket.on("candidate", (id, candidate) => {
+        if (id === broadcastId && pc) {
+          console.log("Received candidate from broadcaster:", candidate);
+          pc.addIceCandidate(new RTCIceCandidate(candidate))
+            .then(() =>
+              console.log("ICE candidate added successfully.")
+            )
+            .catch((e) =>
+              console.error("Error adding ICE candidate:", e)
+            );
+        }
+      });
+
+      socket.on("disconnectPeer", (id) => {
+        if (id === broadcastId && pc) {
+          console.log("Broadcaster disconnected.");
+          pc.close();
+          pc = null;
+          updateStatus(
+            "Broadcast ended. Waiting for broadcaster...",
+            "connecting"
+          );
+          socket.emit("watcher");
+        }
+      });
+
+      window.onunload = window.onbeforeunload = () => {
+        socket.close();
+        if (pc) {
+          pc.close();
+        }
+      };
+    </script>
+  </body>
+</html>
