@@ -53,11 +53,26 @@
       <script>
         let code = "";
       
+        // On page load, try to load the last used code from localStorage
+        window.addEventListener("DOMContentLoaded", () => {
+          const lastCode = localStorage.getItem("lastPinCode");
+          if (lastCode && lastCode.length === 4) {
+            document.getElementById("codeInput").value = lastCode;
+            code = lastCode;
+            loadRecs();
+            setInterval(loadRecs, 5000);
+          }
+        });
+      
         function setCode() {
           code = document.getElementById("codeInput").value.trim();
           if (code.length === 4) {
+            localStorage.setItem("lastPinCode", code); // Save to localStorage
             loadRecs();
-            setInterval(loadRecs, 5000);
+            // Prevent multiple intervals
+            if (!window.recsInterval) {
+              window.recsInterval = setInterval(loadRecs, 5000);
+            }
           }
         }
       
@@ -102,6 +117,7 @@
           );
         }
       </script>
+      
       
     </main>
 
