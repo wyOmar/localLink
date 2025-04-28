@@ -41,12 +41,15 @@
           <video id="video" controls autoplay playsinline></video>
         </div>
       </div>
-      <div class="card" style="margin-top:2em;">
+      <div class="card" style="margin-top:2em; display: flex; flex-direction: column; min-height: 350px;">
         <h2>Remote Recommendations</h2>
-        <input id="codeInput" placeholder="Enter 4-digit code" maxlength="4" />
-        <button onclick="setCode()">Connect</button>
-        <div id="recommendations"></div>
+        <div id="recommendations" style="flex: 1 1 auto;"></div>
+        <div class="recommendation-input" style="margin-top: 1.5rem;">
+          <input id="codeInput" placeholder="Enter 4-digit code" maxlength="4" />
+          <button onclick="setCode()">Connect</button>
+        </div>
       </div>
+      
       <script>
         let code = "";
       
