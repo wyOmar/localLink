@@ -41,6 +41,65 @@
           <video id="video" controls autoplay playsinline></video>
         </div>
       </div>
+      <div class="card" style="margin-top:2em;">
+        <h2>Remote Recommendations</h2>
+        <input id="codeInput" placeholder="Enter 4-digit code" maxlength="4" />
+        <button onclick="setCode()">Connect</button>
+        <div id="recommendations"></div>
+      </div>
+      <script>
+        let code = "";
+      
+        function setCode() {
+          code = document.getElementById("codeInput").value.trim();
+          if (code.length === 4) {
+            loadRecs();
+            setInterval(loadRecs, 5000);
+          }
+        }
+      
+        async function loadRecs() {
+          if (!code) return;
+          const res = await fetch(
+            `https://locallink-signaling-0763fb08f9e9.herokuapp.com/recommendations/${code}`
+          );
+          const recs = await res.json();
+          const recsDiv = document.getElementById("recommendations");
+          recsDiv.innerHTML = "";
+          recs.forEach((rec) => {
+            const div = document.createElement("div");
+            div.className = "rec";
+            div.style.cursor = "pointer";
+            div.style.border = "1px solid #ccc";
+            div.style.padding = "10px";
+            div.style.marginBottom = "20px";
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.onclick = () => navigate(rec.url);
+            div.innerHTML = `
+              <img src="${rec.thumbnail}" style="width:120px;height:auto;margin-right:10px;" />
+              <div>
+                <b>${rec.title}</b><br>
+                ${rec.channel} - ${rec.views} - ${rec.posted}
+              </div>
+            `;
+            recsDiv.appendChild(div);
+          });
+        }
+      
+        async function navigate(url) {
+          if (!code) return;
+          await fetch(
+            `https://locallink-signaling-0763fb08f9e9.herokuapp.com/navigate/${code}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: url,
+            }
+          );
+        }
+      </script>
+      
     </main>
 
     <!-- Load the external watcher script -->
