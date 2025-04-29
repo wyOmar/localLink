@@ -2,14 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>LocalLink – Watcher</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Load your bundled socket.io.min.js (no CDN!) -->
-  <script src="socket.io.min.js"></script>
+  <!-- ➤ Load Socket.IO client from CDN -->
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
 </head>
 <body>
   <header>
@@ -18,43 +15,32 @@
   <main class="container">
     <div class="card">
       <h1>Watcher</h1>
-      <div
-        id="status-container"
-        class="status-indicator connecting"
-      >
+      <div id="status-container" class="status-indicator connecting">
         <span class="dot"></span>
         <span id="status">Waiting for broadcaster…</span>
       </div>
       <div class="video-container">
-        <video
-          id="video"
-          controls
-          autoplay
-          playsinline
-        ></video>
+        <video id="video" controls autoplay playsinline></video>
       </div>
     </div>
 
     <div class="card" style="margin-top:2em;">
       <h2>Remote Recommendations</h2>
       <div id="recommendations"></div>
-      <div
-        class="recommendation-input"
-        style="margin-top:1em;"
-      >
+      <div class="recommendation-input" style="margin-top:1em;">
         <input
           id="codeInput"
           type="text"
           maxlength="4"
           placeholder="Enter 4-char PIN"
-          style="text-transform:uppercase;"
+          style="text-transform: uppercase;"
         />
         <button id="connectBtn">Connect</button>
       </div>
     </div>
   </main>
 
-  <!-- real-time watcher logic -->
+  <!-- your real-time watcher logic -->
   <script src="watcher.js"></script>
 </body>
 </html>
