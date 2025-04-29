@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>LocalLink – Watcher</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Socket.io client -->
+  <!-- Socket.IO client -->
   <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
 </head>
 <body>
   <header>
-    <a href="/" class="app-logo">…</a>
+    <a href="/" class="app-logo">
+      <!-- your SVG… -->
+      <span>LocalLink</span>
+    </a>
   </header>
 
   <main class="container">
@@ -34,13 +37,14 @@
           type="text"
           maxlength="4"
           placeholder="Enter 4-char PIN"
-          style="text-transform:uppercase;"
+          style="text-transform: uppercase;"
         />
         <button id="connectBtn">Connect</button>
       </div>
     </div>
   </main>
 
+  <!-- our real-time watcher logic -->
   <script src="watcher.js"></script>
 </body>
 </html>
