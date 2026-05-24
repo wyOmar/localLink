@@ -6,17 +6,12 @@
   // UI refs
   const statusCx = document.getElementById("status-container");
   const statusEl = document.getElementById("status");
-  const audioEl  = document.getElementById("audio"); // Targeting audio tag
-  const codeIn   = document.getElementById("codeInput");
-  const btnConnect= document.getElementById("connectBtn");
+  const audioEl  = document.getElementById("audio");
 
   // PeerConnection for WebRTC
   let pc = null, broadcasterId = null;
   let remoteStream = new MediaStream();
   audioEl.srcObject = remoteStream;
-
-  // PIN state
-  let pin = "";
 
   function updateStatus(msg, cls="") {
     statusEl.textContent = msg;
@@ -24,46 +19,29 @@
     if (cls) statusCx.classList.add(cls);
   }
 
-  // 1) Restore last PIN & auto-join
-  window.addEventListener("DOMContentLoaded", () => {
-    const last = localStorage.getItem("lastPinCode");
-    if (last && last.length === 4) {
-      codeIn.value = last;
-      joinRoom(last);
-    }
+  // ——— WebRTC Signaling ———
+  
+  // 1. Immediately announce ourselves when connected to the server
+  socket.on("connect", () => {
+    console.log("Socket connected:", socket.id);
+    updateStatus("Waiting for broadcaster…", "connecting");
+    socket.emit("watcher"); 
   });
 
-  // 2) Connect button
-  btnConnect.onclick = () => {
-    const val = codeIn.value.trim().toUpperCase();
-    if (val.length === 4) {
-      localStorage.setItem("lastPinCode", val);
-      joinRoom(val);
-    }
-  };
-
-  function joinRoom(code) {
-    pin = code;
-    socket.emit("joinRoom", pin);
-    updateStatus(`Joined PIN ${pin}`, "success");
-  }
-
-  // ——— WebRTC Signaling ———
-  socket.on("connect", () => {
-    console.log("socket connected:", socket.id);
-    if (pin) socket.emit("joinRoom", pin);
+  // 2. If a broadcaster joins AFTER the listener is already open
+  socket.on("broadcaster", () => {
     socket.emit("watcher");
   });
 
-  socket.on("broadcaster", () => socket.emit("watcher"));
-
+  // 3. Handle incoming WebRTC connection
   socket.on("offer", (bId, desc) => {
     broadcasterId = bId;
     updateStatus("Connecting to audio broadcast…", "connecting");
+    
     if (pc) pc.close();
     pc = new RTCPeerConnection();
     
-    // reset remote stream
+    // Reset remote stream
     remoteStream.getTracks().forEach((t) => t.stop());
     remoteStream = new MediaStream();
     audioEl.srcObject = remoteStream;
@@ -71,25 +49,24 @@
     pc.setRemoteDescription(desc)
       .then(() => pc.createAnswer())
       .then((ans) => pc.setLocalDescription(ans))
-      .then(() =>
-        socket.emit("answer", broadcasterId, pc.localDescription)
-      )
+      .then(() => socket.emit("answer", broadcasterId, pc.localDescription))
       .catch(console.error);
 
     pc.onicecandidate = (e) => {
-      if (e.candidate)
+      if (e.candidate) {
         socket.emit("candidate", broadcasterId, e.candidate);
+      }
     };
     
     pc.ontrack = (e) => {
-      e.streams[0].getTracks().forEach((t) =>
-        remoteStream.addTrack(t)
-      );
+      e.streams[0].getTracks().forEach((t) => remoteStream.addTrack(t));
       updateStatus("Receiving Audio!", "success");
       
       // Attempt to play automatically
       audioEl.play().catch((err) => {
         console.warn("Autoplay blocked. User interaction required:", err);
+        // If the browser blocks audio, tell the user to click the player
+        updateStatus("Click the play button to hear audio", "connecting");
       });
     };
   });
@@ -105,6 +82,7 @@
       pc.close();
       pc = null;
       updateStatus("Audio broadcast ended, waiting…", "connecting");
+      // Tell the server we are ready for a new connection
       socket.emit("watcher");
     }
   });
