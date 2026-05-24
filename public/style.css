@@ -482,3 +482,22 @@ input#codeInput:focus {
 .recommendation-input button:hover {
   background-color: color-mix(in srgb, var(--primary) 90%, black);
 }
+
+/* Audio element styling for Listener */
+.audio-container {
+  width: 100%;
+  border-radius: var(--radius);
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 2rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+audio {
+  width: 100%;
+  max-width: 400px; /* Keeps the audio player from stretching too wide on desktop */
+  outline: none;
+}
