@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>LocalLink – Watcher</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- ➤ Load Socket.IO client from CDN -->
   <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -19,7 +18,7 @@
         <span id="status">Waiting for broadcaster…</span>
       </div>
       <div class="video-container">
-        <video id="video" controls autoplay playsinline></video>
+        <audio id="video" controls autoplay playsinline></audio>
       </div>
     </div>
 
@@ -39,7 +38,6 @@
     </div>
   </main>
 
-  <!-- your real-time watcher logic -->
   <script src="watcher.js"></script>
 </body>
 </html>
