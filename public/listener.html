@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>LocalLink – Listener</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+</head>
+<body>
+  <header>
+    <a href="/" class="app-logo">LocalLink</a>
+  </header>
+  <main class="container">
+    <div class="card">
+      <h1 class="app-title mb-2">Listener Mode</h1>
+      <p class="mb-4">Ultra-low latency audio streaming for local network.</p>
+
+      <div id="status-container" class="status-indicator connecting">
+        <span class="dot"></span>
+        <span id="status">Waiting for broadcaster…</span>
+      </div>
+      
+      <div class="audio-container" style="margin-top: 1.5em; text-align: center;">
+        <audio id="audio" controls autoplay playsinline style="width: 100%;"></audio>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:2em;">
+      <div class="recommendation-input">
+        <input
+          id="codeInput"
+          type="text"
+          maxlength="4"
+          placeholder="Enter 4-char PIN"
+          style="text-transform: uppercase;"
+        />
+        <button id="connectBtn">Connect</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="listener.js"></script>
+</body>
+</html>
